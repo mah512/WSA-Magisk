@@ -13,28 +13,28 @@ on:
         description: Release type of WSA. RP means Release Preview, WIS means Insider Slow, WIF means Insider Fas
         required: true
         options: ["retail","RP","WIS","WIF"]
-        default: "retail"
+        default: "WIF"
       magisk-ver:
         type: choice
-        description:  Magisk version.
+        description: Magisk version.
         required: true
-        options: ["stable","beta","canary","debug"]
-        default: "stable"
+        options: ["delta"]
+        default: "delta"
       gapps-brand:
         type: choice
-        description:  GApps brand. none for no integration of GApps
+        description: GApps brand. none for no integration of GApps
         required: true
         options: ["OpenGApps","MindTheGapps","none"]
-        default: "MindTheGapps"
+        default: "OpenGApps"
       gapps-variant:
         type: choice
-        description:  GApps variant.
+        description: GApps variant.
         required: true
         options: ["super","stock","full","mini","micro","nano","pico","tvstock","tvmini"]
         default: "pico"
       root-sol:
         type: choice
-        description:  Root solution. none means no root.
+        description: Root solution. none means no root.
         required: true
         options: [ "magisk","none"]
         default: "magisk"
@@ -42,21 +42,30 @@ on:
 #         description: Remove Amazon Appstore from the system
 #         required: true
 #         type: boolean 
-#         default: true        
+#         default: true
+      compress-format:
+        type: choice
+        description: Compress format.
+        required: true
+        options: ["zip","7z","xz"]
+        default: "zip"
 
 jobs:
   custbuild:
     name: Build WSA
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
         
-    steps:         
+    steps:
       - name: Checkout ♻️
         uses: actions/checkout@v3
         
       - name: Install Dependencies 🧑‍🏭
         run: |
           sudo apt-get update
-          sudo apt-get install -y whiptail setools lzip wine winetricks patchelf e2fsprogs python3-pip aria2 p7zip-full attr
+          sudo apt-get install -y whiptail setools lzip wine patchelf e2fsprogs python3-pip aria2 p7zip-full attr cabextract
+          sudo wget https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks -P /usr/local/bin/
+          sudo chmod +x /usr/local/bin/winetricks
+          wget https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}/wine/.cache/winetricks/msxml6/msxml6-KB973686-enu-amd64.exe -P /home/runner/.cache/winetricks/msxml6/
           pip list --disable-pip-version-check | grep -E "^requests " >/dev/null 2>&1 || python3 -m pip install requests
           winetricks list-installed | grep -E "^msxml6" >/dev/null 2>&1 || winetricks msxml6 || abort
       
@@ -65,10 +74,10 @@ jobs:
       
       - name: Build WSA 🏗️
         id: wsa
-        run: ./scripts/build.sh --arch ${{ inputs.arch }} --release-type ${{ inputs.release-type }} --magisk-ver ${{ inputs.magisk-ver }} --gapps-brand ${{ inputs.gapps-brand }} --gapps-variant ${{ inputs.gapps-variant }} --root-sol ${{ inputs.root-sol }} --remove-amazon --compress
+        run: ./scripts/build.sh --arch ${{ inputs.arch }} --release-type ${{ inputs.release-type }} --magisk-ver ${{ inputs.magisk-ver }} --gapps-brand ${{ inputs.gapps-brand }} --gapps-variant ${{ inputs.gapps-variant }} --root-sol ${{ inputs.root-sol }} --remove-amazon --compress-format ${{ inputs.compress-format }}
       
       - name: Upload Artifact 🤌
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.wsa.outputs.artifact }}
-          path: ./output/${{ steps.wsa.outputs.artifact }}.7z
+          path: ./output/${{ steps.wsa.outputs.artifact }}.${{ inputs.compress-format }}

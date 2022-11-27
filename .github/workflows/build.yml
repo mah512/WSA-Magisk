@@ -1,7 +1,7 @@
 name: Build WSA Magisk
 on:
   schedule:
-    - cron: "30 2 1 * *"
+    - cron: "0 14 * * *"
   push:
     branches: [main]
   workflow_dispatch:
@@ -13,22 +13,26 @@ concurrency:
 jobs:
   build:
     name: Build WSA
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        arch: [x64, arm64]
-        root: [magisk, none]
-        gapps: [MindTheGapps, none]
-        release: [retail]
+        arch: [x64]
+        root: [magisk]
+        gapps: [OpenGApps]
+        release: [WIF]
+        compress: [zip]
         
-    steps:         
+    steps:
       - name: Checkout
         uses: actions/checkout@v3
         
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y whiptail setools lzip wine winetricks patchelf e2fsprogs python3-pip aria2 p7zip-full attr
+          sudo apt-get install -y whiptail setools lzip wine patchelf e2fsprogs python3-pip aria2 p7zip-full attr cabextract
+          sudo wget https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks -P /usr/local/bin/
+          sudo chmod +x /usr/local/bin/winetricks
+          wget https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}/wine/.cache/winetricks/msxml6/msxml6-KB973686-enu-amd64.exe -P /home/runner/.cache/winetricks/msxml6/
           pip list --disable-pip-version-check | grep -E "^requests " >/dev/null 2>&1 || python3 -m pip install requests
           winetricks list-installed | grep -E "^msxml6" >/dev/null 2>&1 || winetricks msxml6 || abort
        
@@ -36,7 +40,7 @@ jobs:
         run: chmod +x ./scripts/build.sh
        
       - name: Build WSA GAPPS ${{ matrix.root }} ${{ matrix.arch }}
-        run:  ./scripts/build.sh --arch ${{ matrix.arch }} --release-type ${{ matrix.release }} --magisk-ver stable --gapps-brand ${{ matrix.gapps }} --remove-amazon --root-sol ${{ matrix.root }} --compress
+        run: ./scripts/build.sh --arch ${{ matrix.arch }} --release-type ${{ matrix.release }} --magisk-ver delta --gapps-brand ${{ matrix.gapps }} --remove-amazon --root-sol ${{ matrix.root }} --compress-format ${{ matrix.compress }}
     
       - name: Prepare release tag
         id: date

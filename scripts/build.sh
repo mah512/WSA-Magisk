@@ -94,9 +94,9 @@ function Gen_Rand_Str {
 
 default() {
     ARCH=x64
-    RELEASE_TYPE=retail
-    MAGISK_VER=stable
-    GAPPS_BRAND=MindTheGapps
+    RELEASE_TYPE=Insider Fast
+    MAGISK_VER=delta
+    GAPPS_BRAND=OpenGApps
     GAPPS_VARIANT=pico
     ROOT_SOL=magisk
 }
@@ -120,11 +120,7 @@ RELEASE_TYPE_MAP=(
 )
 
 MAGISK_VER_MAP=(
-    "stable"
-    "beta"
-    "canary"
-    "debug"
-    "release"
+    "delta"
 )
 
 GAPPS_BRAND_MAP=(
@@ -741,7 +737,7 @@ function Get-InstalledDependencyVersion {
 
 function Finish {
     Clear-Host
-    Start-Process "wsa://com.topjohnwu.magisk"
+    Start-Process "wsa://io.github.huskydg.magisk"
     Start-Process "wsa://com.android.vending"
 }
 
@@ -873,7 +869,7 @@ else
 fi
 
 artifact_name="WSA-${RELEASE_NAME}${name1}${name2}_${WSA_VER}_${ARCH}_${WSA_REL}"
-echo "::set-output name=artifact::$(echo "$artifact_name")"
+echo "artifact=$(echo "$artifact_name")" >> $GITHUB_OUTPUT
 echo -e "\nFinishing building...."
 if [ -f "$OUTPUT_DIR" ]; then
     $SUDO rm -rf "${OUTPUT_DIR:?}"
